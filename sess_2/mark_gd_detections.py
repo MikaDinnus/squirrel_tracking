@@ -2,6 +2,8 @@ import json, csv
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 
+print("################ MARKING GROUNDING DINO DETECTIONS ################")
+
 SERIES_CSV = "sess_2/changed_series.csv"
 DETECTIONS_JSON = "sess_2/detections_report.json"
 OUT_PNG = "sess_2/final_marked.png"

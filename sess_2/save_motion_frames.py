@@ -4,6 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import csv 
 
+print("################ START DETECTING MOTION FRAMES ################")
+
 METHOD = "mog2"
 BIN_THRESH = 25
 DISPLAY_WIDTH = 360
