@@ -1,0 +1,63 @@
+[
+  {
+    "frame": 422,
+    "image": "event_000422_2.76pct.jpg",
+    "detections": [
+      {
+        "label": "squirrel",
+        "score": 0.5950356721878052
+      }
+    ],
+    "squirrel_detected": true
+  },
+  {
+    "frame": 831,
+    "image": "event_000831_2.40pct.jpg",
+    "detections": [
+      {
+        "label": "squirrel",
+        "score": 0.401577889919281
+      }
+    ],
+    "squirrel_detected": true
+  },
+  {
+    "frame": 949,
+    "image": "event_000949_2.60pct.jpg",
+    "detections": [
+      {
+        "label": "squirrel",
+        "score": 0.41025784611701965
+      }
+    ],
+    "squirrel_detected": true
+  },
+  {
+    "frame": 953,
+    "image": "event_000953_2.49pct.jpg",
+    "detections": [
+      {
+        "label": "squirrel",
+        "score": 0.5382509827613831
+      }
+    ],
+    "squirrel_detected": true
+  },
+  {
+    "frame": 954,
+    "image": "event_000954_3.42pct.jpg",
+    "detections": [
+      {
+        "label": "squirrel",
+        "score": 0.6308767795562744
+      }
+    ],
+    "squirrel_detected": true
+  },
+  {
+    "frame": 1020,
+    "image": "event_001020_2.49pct.jpg",
+    "detections": [],
+    "squirrel_detected": false
+  }
+]
