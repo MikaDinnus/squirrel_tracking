@@ -7,11 +7,8 @@ import imageio.v2 as imageio # v2 API ist einfacher für Streaming-Writes
 from tqdm import tqdm
 
 # ================= EINSTELLUNGEN =================
-VIDEO_PATH = '20241031_Rahn_05_In (2).MOV'
-OUTPUT_PATH = '20241031_Rahn_05_In_2_short.mp4'
-
 # Analyse-Einstellungen
-RESIZE_RATE = 0.5          # Bild halbieren für Analyse (macht es schneller)
+RESIZE_RATE = 0.25          # Bild halbieren für Analyse (macht es schneller)
 ANALYSIS_SKIP_RATE = 3     # Nur jedes 3. Frame prüfen
 
 # Empfindlichkeit (Image Subtraction)
@@ -42,8 +39,8 @@ def shorten(VIDEO_PATH, OUTPUT_PATH):
     print(f"--- Starte Lokale Analyse ---")
     print(f"Input: {VIDEO_PATH}")
     print(f"Original Auflösung: {width}x{height} @ {fps} FPS")
+    print(f"Analyse Auflösung: {int(width*RESIZE_RATE)}x{int(height*RESIZE_RATE)} @ {fps/ANALYSIS_SKIP_RATE:.2f} FPS")
     print(f"Gesamtanzahl Frames: {total_frames}")
-    print(f"Analyse: Alle {ANALYSIS_SKIP_RATE} Frames bei {RESIZE_RATE*100:.0f}% Größe")
     print(f"Encoder: H.264 (via imageio/ffmpeg) für kleine Dateigröße")
     print(f"output: {OUTPUT_PATH}\n")
 
