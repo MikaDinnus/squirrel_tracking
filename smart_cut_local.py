@@ -9,7 +9,9 @@ from tqdm import tqdm
 # ================= EINSTELLUNGEN =================
 # Analyse-Einstellungen
 RESIZE_RATE = 0.25          # Bild halbieren für Analyse (macht es schneller)
-ANALYSIS_SKIP_RATE = 3     # Nur jedes 3. Frame prüfen
+ANALYSIS_SKIP_RATE = 10     # Nur jedes 10. Frame prüfen
+
+OUTPUT_RESIZE_RATE = 0.5    # Ausgabegröße (1.0 = Originalgröße)
 
 # Empfindlichkeit (Image Subtraction)
 PIXEL_DIFF_THRESH = 30     # Wie stark muss sich die Farbe ändern? (0-255)
@@ -40,6 +42,7 @@ def shorten(VIDEO_PATH, OUTPUT_PATH):
     print(f"Input: {VIDEO_PATH}")
     print(f"Original Auflösung: {width}x{height} @ {fps} FPS")
     print(f"Analyse Auflösung: {int(width*RESIZE_RATE)}x{int(height*RESIZE_RATE)} @ {fps/ANALYSIS_SKIP_RATE:.2f} FPS")
+    print(f"Output Auflösung: {int(width*OUTPUT_RESIZE_RATE)}x{int(height*OUTPUT_RESIZE_RATE)} @ {fps} FPS")
     print(f"Gesamtanzahl Frames: {total_frames}")
     print(f"Encoder: H.264 (via imageio/ffmpeg) für kleine Dateigröße")
     print(f"output: {OUTPUT_PATH}\n")
@@ -53,7 +56,7 @@ def shorten(VIDEO_PATH, OUTPUT_PATH):
             codec='libx264',  # <--- DAS macht die Datei klein
             quality=6,        # 5-7 ist optimal. (entspricht CRF ~23)
             pixelformat='yuv420p', # Maximale Kompatibilität (Windows/Mac/Android)
-            macro_block_size=None  # Verhindert Fehler bei krummen Auflösungen
+            macro_block_size=None,  # Verhindert Fehler bei krummen Auflösungen
         )
     except Exception as e:
         print(f"\nFEHLER beim Starten des Writers: {e}")
@@ -110,6 +113,7 @@ def shorten(VIDEO_PATH, OUTPUT_PATH):
                 # Start-Event! Puffer (Vergangenheit) schreiben
                 while frame_buffer:
                     buf_frame = frame_buffer.popleft()
+                    buf_frame = cv2.resize(buf_frame, (0, 0), fx=OUTPUT_RESIZE_RATE, fy=OUTPUT_RESIZE_RATE)
                     # WICHTIG: OpenCV ist BGR, imageio braucht RGB
                     rgb_frame = cv2.cvtColor(buf_frame, cv2.COLOR_BGR2RGB)
                     writer.append_data(rgb_frame)
@@ -122,6 +126,7 @@ def shorten(VIDEO_PATH, OUTPUT_PATH):
         # Entscheidung: Schreiben oder Puffern?
         if recording:
             # Wir sind im Aufnahmemodus
+            frame = cv2.resize(frame, (0, 0), fx=OUTPUT_RESIZE_RATE, fy=OUTPUT_RESIZE_RATE)
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             writer.append_data(rgb_frame)
             saved_frames_count += 1
@@ -158,4 +163,4 @@ def shorten(VIDEO_PATH, OUTPUT_PATH):
 
 if __name__ == "__main__":
     for filename in os.listdir('original_videos'):
-        shorten(os.path.join('original_videos', filename), os.path.join('shortened_videos', filename))
+        shorten(os.path.join('original_videos', filename), os.path.join('shortened_videos', filename.replace(".MOV", ".mp4")))
