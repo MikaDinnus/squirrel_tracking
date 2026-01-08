@@ -7,7 +7,7 @@ def detect_objects_in_video(video_path):
     # Alternativen: yolov8s.pt (small), yolov8m.pt (medium) für höhere Genauigkeit.
     # Das Modell wird beim ersten Start automatisch heruntergeladen.
     print("Lade Modell...")
-    model = YOLO('yolov8n.pt')
+    model = YOLO('runs/detect/train4/weights/best.pt')
 
     # 2. Öffne die Videoquelle
     # Nutze '0' für die Webcam oder den Dateipfad für ein Video (z.B. "mein_video.mp4")
@@ -47,8 +47,5 @@ def detect_objects_in_video(video_path):
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    # HIER den Pfad zu deinem Video eintragen oder 0 für Webcam
-    VIDEO_SOURCE = "shortened_videos/20241031_Rahn_05_In (4).mp4" 
-    # VIDEO_SOURCE = 0  # <--- Einkommentieren für Webcam
-    
+    VIDEO_SOURCE = "videos/Hörnchen_Video1.mp4"     
     detect_objects_in_video(VIDEO_SOURCE)
