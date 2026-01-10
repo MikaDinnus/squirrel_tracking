@@ -1,13 +1,20 @@
 import cv2
 from ultralytics import YOLO
 
+MODEL = 'runs/detect/train/weights/best.pt'  # YOLOv8 Nano Modell
+VIDEO_SOURCE = "videos/v2.mp4"   
+CONFIDENCE_THRESHOLD = 0.5  # Mindestvertrauen für die Anzeige von Erkennungen
+
 def detect_objects_in_video(video_path):
     # 1. Lade das YOLOv8 Modell
     # 'yolov8n.pt' ist das Nano-Modell (klein & schnell).
     # Alternativen: yolov8s.pt (small), yolov8m.pt (medium) für höhere Genauigkeit.
     # Das Modell wird beim ersten Start automatisch heruntergeladen.
-    print("Lade Modell...")
-    model = YOLO('runs/detect/train4/weights/best.pt')
+    print("Lade Modell: ", MODEL)
+    model = YOLO(MODEL)
+
+    print ("Öffne Videoquelle: ", video_path)
+    print("Confidence Threshold: ", CONFIDENCE_THRESHOLD)
 
     # 2. Öffne die Videoquelle
     # Nutze '0' für die Webcam oder den Dateipfad für ein Video (z.B. "mein_video.mp4")
@@ -29,7 +36,7 @@ def detect_objects_in_video(video_path):
 
         # 4. YOLOv8 Inferenz auf dem Frame ausführen
         # conf=0.5 bedeutet, nur Objekte mit >50% Sicherheit anzeigen
-        results = model(frame, conf=0.1, verbose=False)
+        results = model(frame, conf=CONFIDENCE_THRESHOLD, verbose=False)
 
         # 5. Ergebnisse visualisieren
         # YOLO hat eine eingebaute plot() Funktion, die Bounding Boxes und Labels zeichnet
@@ -47,5 +54,4 @@ def detect_objects_in_video(video_path):
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    VIDEO_SOURCE = "videos/Hörnchen_Video1.mp4"     
     detect_objects_in_video(VIDEO_SOURCE)

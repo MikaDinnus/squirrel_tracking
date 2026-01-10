@@ -3,4 +3,4 @@ shortened_videos
 *.ndjson
 *.mp4
 yolo_video_dataset
-runs
+videos

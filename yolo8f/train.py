@@ -7,9 +7,9 @@ def main():
     # 2. Training starten
     results = model.train(
         data='yolo_video_dataset/data.yaml', 
-        epochs=100, 
+        epochs=50, 
         imgsz=640,
-        batch=8,        # Wichtig für GTX 970
+        batch=16,        # Wichtig für GTX 970
         device=0,       # GPU nutzen
         workers=2       # Datenlader-Prozesse
     )
