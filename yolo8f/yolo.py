@@ -7,7 +7,7 @@ import os
 class YoloDetectorApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("YOLOv8 Objekt-Erkennung")
+        self.root.title("YOLO Objekt-Erkennung")
         self.root.geometry("500x450")
 
         # Standardwerte
@@ -116,7 +116,7 @@ class YoloDetectorApp:
         
         print(f"Video Dimensionen: {video_width}x{video_height}")
 
-        window_name = "YOLOv8 Analyse"
+        window_name = "YOLO Analyse"
         
         # 1. Fenster erstellen, das skalierbar ist (WINDOW_NORMAL)
         cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
