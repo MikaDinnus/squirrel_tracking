@@ -9,31 +9,31 @@
     "frame": 422,
     "image": "event_000422_2.76pct.jpg",
     "squirrel_detected": true,
-    "description": "Based on the image, I can describe the scene as follows:\n\n*   **Squirrel Presence and Position:** The squirrel is present in the image, and it is located inside the enclosure.\n*   **Squirrel Activity:** The squirrel appears to be eating.\n*   **Prop Presence:** There are"
+    "description": "**Squirrel Classification**\n\n* **squirrel_present**: True\n* **squirrel_position**: Inside\n* **squirrel_activity**: Unknown\n* **prop_present**: Cups\n* **prop_used**: Unknown"
   },
   {
     "frame": 831,
     "image": "event_000831_2.40pct.jpg",
     "squirrel_detected": true,
-    "description": "Here is a concise representation of the image description in the requested format:\n\n**Squirrel Presence and Position:**\n* **squirrel_present:** True\n* **squirrel_position:** Inside\n\n**Squirrel Activity:**\n* **squirrel_activity:** Eating\n\n**Prop Presence:**\n* **prop"
+    "description": "**Squirrel Classification**\n\n* **squirrel_present**: True\n* **squirrel_position**: Inside\n* **squirrel_activity**: Unknown\n* **prop_present**: Cups\n* **prop_used**: Unknown"
   },
   {
     "frame": 949,
     "image": "event_000949_2.60pct.jpg",
     "squirrel_detected": true,
-    "description": "Based on the image, here is a detailed description of the scene:\n\n*   **Squirrel Presence and Position:**\n    *   The squirrel is present in the image.\n    *   The squirrel is positioned inside the enclosure.\n*   **Squirrel Activity:**\n    *   The squirrel is"
+    "description": "**Squirrel Classification**\n\n* **squirrel_present**: True\n* **squirrel_position**: Inside\n* **squirrel_activity**: Unknown\n* **prop_present**: Cups\n* **prop_used**: Unknown"
   },
   {
     "frame": 953,
     "image": "event_000953_2.49pct.jpg",
     "squirrel_detected": true,
-    "description": "Here is a detailed description of the image:\n\n*   **Squirrel Presence and Position:**\n    *   The squirrel is present in the image.\n    *   The squirrel is located inside the enclosure.\n*   **Squirrel Activity:**\n    *   The squirrel is eating.\n*   **"
+    "description": "**Squirrel Classification**\n\n* **squirrel_present**: True\n* **squirrel_position**: Inside\n* **squirrel_activity**: Unknown\n* **prop_present**: Cups\n* **prop_used**: Unknown"
   },
   {
     "frame": 954,
     "image": "event_000954_3.42pct.jpg",
     "squirrel_detected": true,
-    "description": "Based on the image, here is a detailed description of the scene:\n\n*   **Squirrel Presence and Position:**\n    *   The squirrel is present in the image.\n    *   The squirrel is located inside the enclosure.\n*   **Squirrel Activity:**\n    *   The squirrel is"
+    "description": "**Squirrel Classification**\n\n* **squirrel_present**: True\n* **squirrel_position**: Inside\n* **squirrel_activity**: Unknown\n* **prop_present**: Cups\n* **prop_used**: Unknown"
   },
   {
     "frame": 1020,
