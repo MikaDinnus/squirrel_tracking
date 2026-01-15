@@ -13,7 +13,6 @@ DRAW_EVERY_MS = 10
 LOG_EVERY_N = 100
 PLOT_OUT = "final.png"
 
-
 SERIES_CSV = "sess_2/changed_series.csv"
 series_rows = [("frame","changed_percent")]
 
@@ -21,9 +20,13 @@ EVENT_THRESHOLD = 2.5
 EVENT_DIR = "sess_2/motion_frames"
 os.makedirs(EVENT_DIR, exist_ok=True)
 
-cap = cv.VideoCapture("sess_2/videos/sqr_dattsosib_1.mp4")
+VIDEO_PATH = "sess_2/videos/sqr_dattsosib_1.mp4"
+cap = cv.VideoCapture(VIDEO_PATH)
+cap_seek = cv.VideoCapture(VIDEO_PATH)
 
 ok, frame = cap.read()
+if not ok:
+    raise RuntimeError("Konnte erstes Frame nicht lesen.")
 
 gray_prev = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
 
@@ -51,6 +54,9 @@ cv.resizeWindow("frame", DISPLAY_WIDTH, int(DISPLAY_WIDTH * 9/16))
 cv.resizeWindow("motion", DISPLAY_WIDTH, int(DISPLAY_WIDTH * 9/16))
 
 prev_changed = None
+
+pre_event_saved = False
+PRE_OFFSET = 200
 
 while True:
     ok, frame = cap.read()
@@ -91,6 +97,22 @@ while True:
         if crossed_up or crossed_down:
             out_path = os.path.join(EVENT_DIR, f"event_{frame_idx:06d}_{changed:.2f}pct.jpg")
             cv.imwrite(out_path, frame)
+
+            if not pre_event_saved:
+                target_idx = frame_idx - PRE_OFFSET
+                if target_idx >= 0:
+                    cap_seek.set(cv.CAP_PROP_POS_FRAMES, target_idx)
+                    ok2, pre_frame = cap_seek.read()
+                    if ok2 and pre_frame is not None:
+                        pre_path = os.path.join(
+                            EVENT_DIR, f"event_{target_idx:06d}_pre{PRE_OFFSET}.jpg"
+                        )
+                        cv.imwrite(pre_path, pre_frame)
+                    else:
+                        print(f"[WARN] Konnte Vor-Event-Frame {target_idx} nicht lesen.")
+                else:
+                    print(f"[INFO] Weniger als {PRE_OFFSET} Frames seit Start – Vor-Event entfällt.")
+                pre_event_saved = True
         prev_changed = changed
 
     if frame_idx % LOG_EVERY_N == 0:
@@ -109,6 +131,7 @@ while True:
         break
 
 cap.release()
+cap_seek.release()
 cv.destroyAllWindows()
 
 plt.ioff()
@@ -116,6 +139,6 @@ fig.savefig(PLOT_OUT, dpi=150)
 print(f"Gespeichert: {PLOT_OUT}")
 plt.show()
 
-with open(SERIES_CSV, "w", newline="", encoding="utf-8") as f:  # <<< NEU
+with open(SERIES_CSV, "w", newline="", encoding="utf-8") as f:
     wr = csv.writer(f)
     wr.writerows(series_rows)

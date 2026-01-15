@@ -10,7 +10,7 @@ DRAW_EVERY_MS = 10
 LOG_EVERY_N = 100
 PLOT_OUT = "final.png"
 
-cap = cv.VideoCapture("sess_2/videos/sqr_dattsosib_1.mp4")
+cap = cv.VideoCapture("sess_2/videos/sqr_dattsosib_2.mp4")
 
 ok, frame = cap.read()
 gray_prev = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)

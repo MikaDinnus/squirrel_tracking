@@ -1,5 +1,11 @@
 [
   {
+    "frame": 222,
+    "image": "event_000222_pre200.jpg",
+    "detections": [],
+    "squirrel_detected": false
+  },
+  {
     "frame": 422,
     "image": "event_000422_2.76pct.jpg",
     "detections": [
