@@ -4,14 +4,26 @@ import numpy as np
 import matplotlib.pyplot as plt
 import csv 
 
-print("################ START DETECTING MOTION FRAMES ################")
+# Use a non-interactive backend for matplotlib to prevent crashes
+plt.switch_backend('Agg') 
+
+print("################ START DETECTING MOTION FRAMES (HEADLESS) ################")
+
+# --- INPUT HANDLING ---
+if len(sys.argv) > 1:
+    VIDEO_PATH = sys.argv[1]
+else:
+    VIDEO_PATH = "sess_2/videos/sqr_dattsosib_1.mp4"
+    print(f"[WARN] No argument provided. Using default: {VIDEO_PATH}")
+
+print(f"Processing Video: {VIDEO_PATH}")
 
 METHOD = "mog2"
 BIN_THRESH = 25
-DISPLAY_WIDTH = 360
-DRAW_EVERY_MS = 10
+# DISPLAY_WIDTH = 360  <-- Not needed in headless
+# DRAW_EVERY_MS = 10   <-- Not needed in headless
 LOG_EVERY_N = 100
-PLOT_OUT = "final.png"
+PLOT_OUT = "final.png" # You might want to make this dynamic if running multiple clips, e.g. based on video name
 
 SERIES_CSV = "sess_2/changed_series.csv"
 series_rows = [("frame","changed_percent")]
@@ -20,20 +32,22 @@ EVENT_THRESHOLD = 2.5
 EVENT_DIR = "sess_2/motion_frames"
 os.makedirs(EVENT_DIR, exist_ok=True)
 
-VIDEO_PATH = "sess_2/videos/sqr_dattsosib_1.mp4"
+if not os.path.exists(VIDEO_PATH):
+    raise FileNotFoundError(f"Video file not found: {VIDEO_PATH}")
+
 cap = cv.VideoCapture(VIDEO_PATH)
 cap_seek = cv.VideoCapture(VIDEO_PATH)
 
 ok, frame = cap.read()
 if not ok:
-    raise RuntimeError("Konnte erstes Frame nicht lesen.")
+    raise RuntimeError(f"Konnte erstes Frame nicht lesen aus {VIDEO_PATH}.")
 
 gray_prev = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
 
 if METHOD == "mog2":
     bg = cv.createBackgroundSubtractorMOG2(history=1000, varThreshold=16, detectShadows=True)
 
-plt.ion()
+# Setup Plot (but do not show it)
 fig, ax = plt.subplots(figsize=(8, 3))
 line, = ax.plot([], [], linewidth=1.5)
 ax.set_xlabel("Frame")
@@ -42,21 +56,15 @@ ax.set_ylim(0, 15)
 
 xdata = []
 ydata = []
-last_draw = 0.0
-
-log_frames = []
-log_values = []
 
 frame_idx = 0
-cv.namedWindow("frame", cv.WINDOW_NORMAL)
-cv.namedWindow("motion", cv.WINDOW_NORMAL)
-cv.resizeWindow("frame", DISPLAY_WIDTH, int(DISPLAY_WIDTH * 9/16))
-cv.resizeWindow("motion", DISPLAY_WIDTH, int(DISPLAY_WIDTH * 9/16))
-
 prev_changed = None
-
 pre_event_saved = False
 PRE_OFFSET = 200
+
+# --- REMOVED WINDOW CREATION ---
+# cv.namedWindow("frame", cv.WINDOW_NORMAL)
+# cv.namedWindow("motion", cv.WINDOW_NORMAL)
 
 while True:
     ok, frame = cap.read()
@@ -73,22 +81,17 @@ while True:
         mask = np.where(fg == 255, 255, 0).astype(np.uint8)
 
     changed = float(np.count_nonzero(mask)) / mask.size * 100.0
-
     series_rows.append((frame_idx, changed))
 
-    def _small(img):
-        h, w = img.shape[:2]
-        scale = DISPLAY_WIDTH / float(w)
-        nh = max(1, int(h * scale))
-        return cv.resize(img, (DISPLAY_WIDTH, nh), interpolation=cv.INTER_AREA)
-
-    cv.imshow("frame", _small(frame))
-    cv.imshow("motion", _small(mask))
+    # --- REMOVED IMAGE RESIZING AND SHOWING ---
+    # cv.imshow("frame", _small(frame))
+    # cv.imshow("motion", _small(mask))
 
     frame_idx += 1
     xdata.append(frame_idx)
     ydata.append(changed)
 
+    # Event Detection Logic
     if prev_changed is None:
         prev_changed = changed
     else:
@@ -108,37 +111,36 @@ while True:
                             EVENT_DIR, f"event_{target_idx:06d}_pre{PRE_OFFSET}.jpg"
                         )
                         cv.imwrite(pre_path, pre_frame)
-                    else:
-                        print(f"[WARN] Konnte Vor-Event-Frame {target_idx} nicht lesen.")
-                else:
-                    print(f"[INFO] Weniger als {PRE_OFFSET} Frames seit Start – Vor-Event entfällt.")
-                pre_event_saved = True
+                    pre_event_saved = True
         prev_changed = changed
 
     if frame_idx % LOG_EVERY_N == 0:
-        log_frames.append(frame_idx)
-        log_values.append(changed)
+        # print(f"Processing frame {frame_idx}...") # Optional log
+        pass
 
-    now = time.time()
-    if (now - last_draw) * 1000 >= DRAW_EVERY_MS:
-        line.set_data(xdata, ydata)
-        ax.set_xlim(max(0, frame_idx - 600), frame_idx)
-        fig.canvas.draw()
-        fig.canvas.flush_events()
-        last_draw = now
-
-    if cv.waitKey(1) & 0xFF == ord('q'):
-        break
+    # --- REMOVED LIVE PLOTTING AND WAITKEY ---
+    # if cv.waitKey(1) & 0xFF == ord('q'): break
 
 cap.release()
 cap_seek.release()
-cv.destroyAllWindows()
+cv.destroyAllWindows() # Safe to keep, does nothing if no windows exist
 
-plt.ioff()
-fig.savefig(PLOT_OUT, dpi=150)
-print(f"Gespeichert: {PLOT_OUT}")
-plt.show()
+# Update plot data once at the end and save
+line.set_data(xdata, ydata)
+ax.set_xlim(0, frame_idx)
+ax.relim() 
+ax.autoscale_view()
+
+# Generate a unique filename for the plot so they don't overwrite each other
+plot_filename = f"plot_{os.path.basename(VIDEO_PATH)}.png"
+plot_path = os.path.join("sess_2", plot_filename)
+fig.savefig(plot_path, dpi=150)
+print(f"Gespeichert: {plot_path}")
+
+# plt.show()  <-- CRITICAL: REMOVED
 
 with open(SERIES_CSV, "w", newline="", encoding="utf-8") as f:
     wr = csv.writer(f)
     wr.writerows(series_rows)
+
+print("Motion frames saved successfully.")
