@@ -5,3 +5,9 @@
 /sess_2/papers/
 /sess_2/frames_out/
 /sess_2/motion_frames/
+/sess_3/output/
+/sess_3/__pycache__/
+/sess_3/build
+/sess_3/dist    
+/sess_3/build.bat
+/sess_3/SquirrelTracker.spec

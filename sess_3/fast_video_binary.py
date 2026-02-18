@@ -7,32 +7,42 @@ import imageio_ffmpeg
 
 
 class FastVideoSearcher:
-    def __init__(self, video_path, output_dir):
+    def __init__(self, video_path, output_dir, headless=False, on_progress=None, on_frame=None):
         self.video_path = video_path
         self.output_dir = output_dir
+        self.headless = headless
+        self.on_progress = on_progress
+        self.on_frame = on_frame  # callback(numpy_bgr_image) for GUI visualization
         self.cap = cv2.VideoCapture(video_path)
-        
+
         if not self.cap.isOpened():
             raise ValueError(f"Could not open video: {video_path}")
-            
+
         self.fps = self.cap.get(cv2.CAP_PROP_FPS)
         self.total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
         self.duration_sec = self.total_frames / self.fps
-        
+
         self.search_granularity = 30.0  # Grobe Binärsuche bis 30s
         self.fine_scan_step = 2.0       # Feinanalyse prüft nur alle 2 Sekunden
-        
+
         self.pixel_threshold = 30       # Pixel-Unterschied (0-255)
         self.change_threshold = 2.0     # % des Bildes geändert
         self.samples_per_check = 5      # Stichproben für Binärsuche
         self.min_actual_action = 2.0    # Min. Event-Länge
-        
+
         self.vis_width = 1000
         self.vis_height = 200
         self.vis_img = np.zeros((self.vis_height, self.vis_width, 3), dtype=np.uint8)
-        self.window_name = "Smart Event Searcher"
-        
+
+        if not self.headless:
+            self.window_name = "Smart Event Searcher"
+
         os.makedirs(output_dir, exist_ok=True)
+
+    def _log(self, msg):
+        print(msg)
+        if self.on_progress:
+            self.on_progress(msg)
 
     def get_frame_at_sec(self, seconds):
         frame_idx = int(seconds * self.fps)
@@ -82,16 +92,14 @@ class FastVideoSearcher:
         return None
 
     def refine_and_export(self, coarse_start, coarse_end, ref_gray, event_idx):
-        print(f" -> Feinanalyse (Schrittweite {self.fine_scan_step}s): {coarse_start:.1f}s - {coarse_end:.1f}s")
+        self._log(f" -> Feinanalyse (Schrittweite {self.fine_scan_step}s): {coarse_start:.1f}s - {coarse_end:.1f}s")
         
-        # HIER WIRD JETZT DER PARAMETER GENUTZT
         scan_step = self.fine_scan_step 
         
         current = coarse_start
         real_start = None
         real_end = None
         
-        # 1. Start finden (LILA PHASE)
         while current < coarse_end + 5.0: 
             _, fr_gray = self.get_frame_at_sec(current)
             if fr_gray is None: break 
@@ -107,12 +115,12 @@ class FastVideoSearcher:
             current += scan_step
 
         if real_start is None:
-            print(" -> Fehlalarm. Kein Export.")
+            self._log(" -> Fehlalarm. Kein Export.")
             return None
 
         duration = real_end - real_start
         if duration < self.min_actual_action:
-            print(f" -> Zu kurz ({duration:.1f}s). Ignoriere.")
+            self._log(f" -> Zu kurz ({duration:.1f}s). Ignoriere.")
             return None
 
         # Puffer für FFmpeg (etwas großzügiger, da wir nur alle 2s scannen)
@@ -120,7 +128,7 @@ class FastVideoSearcher:
         final_end = min(self.duration_sec, real_end + 4.0)
         clip_duration = final_end - final_start
         
-        print(f" -> ECHTES EVENT: {final_start:.1f}s - {final_end:.1f}s (FFmpeg Export...)")
+        self._log(f" -> ECHTES EVENT: {final_start:.1f}s - {final_end:.1f}s (FFmpeg Export...)")
         
         # 2. EXPORT MIT FFMPEG (TURBO MODE)
         out_path = os.path.join(self.output_dir, f"event_{event_idx:02d}_{int(final_start)}s.mp4")
@@ -138,43 +146,44 @@ class FastVideoSearcher:
         
         try:
             subprocess.run(cmd, check=True)
-            print(f"    [OK] Gespeichert: {out_path}")
+            self._log(f"    [OK] Gespeichert: {out_path}")
         except subprocess.CalledProcessError as e:
-            print(f"    [ERROR] FFmpeg Fehler: {e}")
+            self._log(f"    [ERROR] FFmpeg Fehler: {e}")
 
         return final_end 
 
     def run(self):
-        print(f"Starte Smart-Search auf: {self.video_path}")
+        self._log(f"Starte Smart-Search auf: {self.video_path}")
         current_time = 0.0
         event_counter = 0
         try:
             while current_time < (self.duration_sec - 10):
-                print(f"\n--- Referenzpunkt: {current_time/60:.2f} min ---")
+                self._log(f"\n--- Referenzpunkt: {current_time/60:.2f} min ---")
                 _, ref_gray = self.get_frame_at_sec(current_time)
                 if ref_gray is None: break
-                
+
                 found_interval = self.recursive_search(current_time, self.duration_sec, ref_gray)
                 if found_interval:
                     start, end = found_interval
                     self.draw_status(start, end, start, 100, True, (0, 165, 255))
                     real_end = self.refine_and_export(start, end, ref_gray, event_counter + 1)
-                    
+
                     if real_end:
                         current_time = real_end
                         event_counter += 1
                     else:
-                        current_time = end 
+                        current_time = end
                 else:
-                    print("Keine weiteren Events.")
+                    self._log("Keine weiteren Events.")
                     break
         except KeyboardInterrupt:
-            print("Abbruch.")
+            self._log("Abbruch.")
         finally:
             self.cap.release()
-            cv2.destroyAllWindows()
-            for _ in range(5): cv2.waitKey(1)
-            print("Fertig.")
+            if not self.headless:
+                cv2.destroyAllWindows()
+                for _ in range(5): cv2.waitKey(1)
+            self._log("Fertig.")
 
     def draw_status(self, start, end, curr, score, is_dirty, color_override=None):
         scale = self.vis_width / self.duration_sec
@@ -186,10 +195,13 @@ class FastVideoSearcher:
         cv2.circle(self.vis_img, (x_curr, 100), 5, (0, 255, 0), -1)
         txt = f"Time: {curr:.0f}s | Diff: {score:.1f}%"
         cv2.putText(self.vis_img, txt, (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (200,200,200), 1)
-        cv2.imshow(self.window_name, self.vis_img)
-        cv2.waitKey(1)
 
-# --- CONFIG ---
+        if self.on_frame:
+            self.on_frame(self.vis_img.copy())
+        if not self.headless:
+            cv2.imshow(self.window_name, self.vis_img)
+            cv2.waitKey(1)
+
 VIDEO = "C:/Users/itsmi/OneDrive/Desktop/DATTSOSIB/videos/raw/Rahn_05_7.mov" 
 OUT = "sess_3/output"
 

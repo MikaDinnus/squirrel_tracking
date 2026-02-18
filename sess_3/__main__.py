@@ -6,7 +6,7 @@ import subprocess
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from fast_video_binary import FastVideoSearcher
 
-RAW_VIDEO_PATH = "C:/Users/itsmi/OneDrive/Desktop/DATTSOSIB/videos/raw/Rahn_05_7.mov"  # Or "C:/.../Rahn_05_7.mov"
+RAW_VIDEO_PATH = "C:/Users/itsmi/OneDrive/Desktop/DATTSOSIB/videos/raw/Rahn_05_7.mov"
 OUTPUT_DIR = "sess_3/output"
 SESS_2_MAIN = "sess_2/__main__.py"
 
