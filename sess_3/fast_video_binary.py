@@ -7,9 +7,10 @@ import imageio_ffmpeg
 
 
 class FastVideoSearcher:
-    def __init__(self, video_path, output_dir, headless=False, on_progress=None, on_frame=None):
+    def __init__(self, video_path, output_dir, yolo_model=None, headless=False, on_progress=None, on_frame=None):
         self.video_path = video_path
         self.output_dir = output_dir
+        self.yolo_model = yolo_model
         self.headless = headless
         self.on_progress = on_progress
         self.on_frame = on_frame  # callback(numpy_bgr_image) for GUI visualization
@@ -150,7 +151,53 @@ class FastVideoSearcher:
         except subprocess.CalledProcessError as e:
             self._log(f"    [ERROR] FFmpeg Fehler: {e}")
 
-        return final_end 
+
+        try:
+            subprocess.run(cmd, check=True)
+            self._log(f"    [OK] Saved: {out_path}")
+
+            # --- YOLO verification ---
+            if self.yolo_model is not None:
+                self._log("    [YOLO] Scanning clip for squirrels...")
+                if self.verify_with_yolo(out_path):
+                    self._log("    [YOLO] ✓ Squirrel detected. Clip kept.")
+                else:
+                    self._log("    [YOLO] ✗ No squirrel found. Deleting clip.")
+                    os.remove(out_path)
+                    return None  # tells run() this was a false positive
+
+        except subprocess.CalledProcessError as e:
+            self._log(f"    [ERROR] FFmpeg error: {e}")
+            return None
+
+        return final_end
+
+
+    def verify_with_yolo(self, clip_path, sample_every_n_frames=10, conf_thresh=0.45):
+        """Returns True if a squirrel is detected in any sampled frame of the clip."""
+        cap = cv2.VideoCapture(clip_path)
+        if not cap.isOpened():
+            return False
+
+        frame_idx = 0
+        found = False
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            if frame_idx % sample_every_n_frames == 0:
+                results = self.yolo_model(frame, conf=conf_thresh, verbose=False)
+                for box in results[0].boxes:
+                    cls_name = self.yolo_model.names[int(box.cls[0])]
+                    if cls_name == "squirrel":  # adjust to match your model's class name
+                        found = True
+                        break
+            if found:
+                break
+            frame_idx += 1
+
+        cap.release()
+        return found
 
     def run(self):
         self._log(f"Starte Smart-Search auf: {self.video_path}")

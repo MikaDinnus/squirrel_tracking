@@ -1,5 +1,6 @@
-import sys
 import os
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+import sys
 import glob
 
 import cv2
@@ -24,10 +25,11 @@ class ProcessingWorker(QThread):
     vis_frame = pyqtSignal(np.ndarray)  # visualization image from draw_status
     finished_all = pyqtSignal(str)
 
-    def __init__(self, video_folder, output_dir):
+    def __init__(self, video_folder, output_dir, yolo_model_path=None):
         super().__init__()
         self.video_folder = video_folder
         self.output_dir = output_dir
+        self.yolo_model_path = yolo_model_path
 
     def run(self):
         video_files = []
@@ -39,8 +41,17 @@ class ProcessingWorker(QThread):
             self.log_message.emit("No video files found in the selected folder.")
             return
 
+        # Load YOLO once for all videos
+        yolo_model = None
+        if self.yolo_model_path:
+            from ultralytics import YOLO
+            self.log_message.emit(f"Loading YOLO model: {self.yolo_model_path}")
+            yolo_model = YOLO(self.yolo_model_path)
+
         self.log_message.emit(f"Found {len(video_files)} video(s). Starting processing...\n")
         os.makedirs(self.output_dir, exist_ok=True)
+
+
 
         for i, video_path in enumerate(video_files):
             self.video_progress.emit(i + 1, len(video_files))
@@ -51,6 +62,7 @@ class ProcessingWorker(QThread):
                     video_path,
                     self.output_dir,
                     headless=True,
+                    yolo_model=yolo_model,
                     on_progress=lambda msg: self.log_message.emit(msg),
                     on_frame=lambda img: self.vis_frame.emit(img),
                 )
@@ -70,6 +82,7 @@ class ProcessingTab(QWidget):
         super().__init__()
         self.selected_folder = None
         self.output_folder = None
+        self.yolo_model_path = None
         self.worker = None
         self._init_ui()
 
@@ -99,6 +112,18 @@ class ProcessingTab(QWidget):
         self.output_btn.clicked.connect(self._browse_output_folder)
         out_row.addWidget(self.output_btn)
         layout.addLayout(out_row)
+
+        # YOLO model selection
+        yolo_row = QHBoxLayout()
+        self.yolo_label = QLabel("No YOLO model selected")
+        self.yolo_label.setStyleSheet("color: #888; font-size: 14px;")
+        yolo_row.addWidget(self.yolo_label, 1)
+        self.yolo_btn = QPushButton("Select YOLO Model (.pt)")
+        self.yolo_btn.setMinimumHeight(40)
+        self.yolo_btn.setStyleSheet("font-size: 14px; padding: 8px 16px;")
+        self.yolo_btn.clicked.connect(self._browse_yolo_model)
+        yolo_row.addWidget(self.yolo_btn)
+        layout.addLayout(yolo_row)
 
         # Start button
         self.start_btn = QPushButton("Start Processing")
@@ -131,6 +156,16 @@ class ProcessingTab(QWidget):
         self.log_area.setStyleSheet("font-family: Consolas, monospace; font-size: 12px;")
         layout.addWidget(self.log_area, 1)
 
+    def _browse_yolo_model(self):
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Select YOLO model", "", "YOLO Weights (*.pt);;All Files (*.*)"
+        )
+        if path:
+            self.yolo_model_path = path
+            self.yolo_label.setText(path)
+            self.yolo_label.setStyleSheet("color: #222; font-size: 14px;")
+            self._check_ready()
+
     def _browse_video_folder(self):
         folder = QFileDialog.getExistingDirectory(self, "Select folder with videos")
         if folder:
@@ -149,7 +184,7 @@ class ProcessingTab(QWidget):
 
     def _check_ready(self):
         self.start_btn.setEnabled(
-            self.selected_folder is not None and self.output_folder is not None
+            self.selected_folder is not None and self.output_folder is not None and self.yolo_model_path is not None
         )
 
     def _start_processing(self):
@@ -162,7 +197,7 @@ class ProcessingTab(QWidget):
         self.log_area.clear()
         self.progress_bar.setValue(0)
 
-        self.worker = ProcessingWorker(self.selected_folder, self.output_folder)
+        self.worker = ProcessingWorker(self.selected_folder, self.output_folder, yolo_model_path=self.yolo_model_path)
         self.worker.log_message.connect(self._append_log)
         self.worker.video_progress.connect(self._update_progress)
         self.worker.vis_frame.connect(self._update_vis)
