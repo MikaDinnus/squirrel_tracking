@@ -2,7 +2,7 @@ from ultralytics import YOLO
 
 def main():
     # 1. Modell laden
-    model = YOLO('yolov8n.pt') 
+    model = YOLO('yolov11n.pt') 
 
     # 2. Training starten
     results = model.train(
